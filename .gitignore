@@ -1,0 +1,5 @@
+# Python 虚拟环境文件夹
+llm_lab_env/
+
+# 环境变量
+.env
