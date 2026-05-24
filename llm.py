@@ -29,3 +29,20 @@ def ask_llm(sys_prompt, user_prompt, temperature=0, output_type="text"):
   )
   
   return response.choices[0].message.content
+
+def tool_call_llm(messages, tools=[]):
+  response = client.chat.completions.create(
+    model="deepseek-chat",
+    tools=tools,
+    messages=messages
+  )
+  
+  return response.choices[0].message
+
+def call_llm(messages):
+  response = client.chat.completions.create(
+    model="deepseek-chat",
+    messages=messages
+  )
+  
+  return response.choices[0].message.content
