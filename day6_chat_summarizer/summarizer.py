@@ -9,33 +9,28 @@ client = OpenAI(
   base_url="https://api.deepseek.com"
 )
 
-def summarize_chat(messages_history):
-  """
-  摘要函数：将长历史对话压缩成短但重要的的记忆
-  """
-  
+def summarize_chat(old_memory, new_messages):
+
   prompt = f"""
-你是一个聊天记忆压缩器。
+你是 AI 记忆系统。
 
-你的任务：
-总结下面对话中的长期重要信息。
+任务：
+融合旧记忆和新对话。
 
-保留：
-- 用户目标
-- 用户偏好
-- 正在进行的任务
-- 技术栈
-- 遇到的问题
+旧记忆：
+{old_memory}
 
-忽略：
-- 寒暄
-- 重复内容
-- 无关内容
+新对话：
+{new_messages}
 
-对话：
-{messages_history}
+要求：
+1. 保留长期重要信息
+2. 删除重复信息
+3. 删除短期无意义内容
+4. 不超过200字
+5. 只输出字符串，不能是其他任何格式，如Markdown和JSON
 """
-  
+
   messages = [
     {
       "role": "user",
