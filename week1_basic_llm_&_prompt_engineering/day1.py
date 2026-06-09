@@ -13,7 +13,7 @@ client = OpenAI(
 
 # 设置模型参数
 temperature = [0, 0.7, 1.5, 2]
-top_p = [0, 0.5, 1]
+top_p = [0.1, 0.5, 1]
 
 # 打开文件，记录实验结果
 with open("experiments/day1_effect_of_parameters_2.md", "w", encoding="utf-8") as f:
@@ -28,6 +28,8 @@ with open("experiments/day1_effect_of_parameters_2.md", "w", encoding="utf-8") a
       # 发送请求
       response = client.chat.completions.create(
           model="deepseek-chat",
+          temperature=temp,
+          top_p=p,
           messages=[
               {
                   "role": "system",
