@@ -1,5 +1,11 @@
 # 使用 Dify 创建一个“相关技术简报邮件生成助手”
 
+![HOME PAGE](./screenshots/app_test_home_page.png)
+
+![OUTPUT PAGE](./screenshots/app_test_output_page.png)
+
+![EMAIL PAGE](./screenshots/prompt_engineering_week_email.jpg)
+
 输入想要了解的技术关键词，就能得到一封包含技术讲解和最新新闻要点的简报邮件。
 
 **Version 1.0:**
