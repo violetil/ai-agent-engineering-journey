@@ -1,5 +1,7 @@
 # 使用 Dify 创建一个“相关技术简报邮件生成助手”
 
+点击 [App](https://udify.app/workflow/bc8vorrwf2DNCg3p) 试用
+
 <table align="center">
   <tr>
     <td align="center"><b>首页输入</b></td>
