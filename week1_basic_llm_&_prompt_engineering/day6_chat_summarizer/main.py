@@ -1,3 +1,4 @@
+# 从本地 memory_manager 模块导入记忆读写相关函数
 from memory_manager import (
   load_memory,
   save_memory,
@@ -11,44 +12,41 @@ from dotenv import load_dotenv
 import os
 
 
+# recent_messages 的 token 上限；超过则调用 summarize_chat
 TOKNE_LIMIT = 2000
 
 
-messages = [
-  { "role": "system", "content": "你是一个 AI 助手" }
-]
-
+# 读 .env；创建 DeepSeek 客户端
 load_dotenv()
-
 client = OpenAI(
   api_key=os.getenv("DEEPSEEK_API_KEY"),
   base_url="https://api.deepseek.com"
 )
 
 def maybe_summarize():
+  """若 recent_messages 超 token 上限，则摘要并持久化。"""
+  
   memory = load_memory()
-  
   recent_messages = memory["recent_messages"]
-  
   token_count = count_tokens(recent_messages)
-  
   print(f"\n当前 token：{token_count}")
   
   if token_count > TOKNE_LIMIT:
     print("\n超过限制，开始摘要...")
-    
     summary = summarize_chat(memory["long_term_memory"], recent_messages)
     
     # 覆盖摘要，清空最近消息
     memory["long_term_memory"] = summary
     memory["recent_messages"] = []
-    
     save_memory(memory)
-    
     print("摘要完成")
 
 # System loop
 while True:
+  messages = [
+    { "role": "system", "content": "你是一个 AI 助手" }
+  ]
+  
   # 获取用户输入
   user_input = input("\nAsk >> ")
   
@@ -58,7 +56,7 @@ while True:
   # 发送给 LLM 获取回复
   messages.append({
     "role": "system",
-    "content": f"长期记忆：{load_memory()["long_term_memory"]}"
+    "content": f"长期记忆：{load_memory()['long_term_memory']}"
   })
   messages.extend(load_memory()["recent_messages"])
   
