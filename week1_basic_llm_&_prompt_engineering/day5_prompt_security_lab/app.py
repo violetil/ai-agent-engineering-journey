@@ -97,7 +97,7 @@ while True:
     })
   
   except Exception as e:
-    print("\n[错误] API 调用失败: {e}\n")
+    print(f"\n[错误] API 调用失败: {e}\n")
   
 # 记录攻击日志
 with open(file_path, "w", encoding="utf-8") as f:
