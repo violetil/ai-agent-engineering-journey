@@ -1,17 +1,16 @@
-# 第二阶段：语法之上的高频模式（细讲版）
+# Python 语法之上的高频模式
 
 ## 模式 1：字典和列表的「安全访问」
 
 ### 1.1 `dict["key"]` vs `dict.get("key", default)`
 
-``` python
+```python
 # 方式 A：直接取键 —— 键不存在会崩溃
 city = fake_weather_data["北京"] # KeyError 如果 "北京" 不存在
 
 # 方式 B：安全取键 —— 不存在返回默认值
 city = fake_weather_data.get("北京", "未知天气")
 ```
-
 
 为什么不用 `if city in dict`？ 可以，但 `.get` 一行搞定，是 Python 惯用法。
 
@@ -72,7 +71,6 @@ messages.extend([
 ])
 # 结果长度 +2（不是 +1！）
 ```
-
 
 怎么读：
 
@@ -424,12 +422,12 @@ arguments = json.loads(tool_call.function.arguments)
 
 三个函数别混：
 
-|函数|方向|场景|
-|---|---|---|
-|`json.dump(obj, f)`|Python → 写文件|保存 memory|
-|`json.load(f)`|文件 → Python|读取 memory|
-|`json.loads(s)`|字符串 → Python|解析 API 里的 JSON 字符串|
-|`json.dumps(obj)`|Python → 字符串|调试打印|
+| 函数                | 方向            | 场景                      |
+| ------------------- | --------------- | ------------------------- |
+| `json.dump(obj, f)` | Python → 写文件 | 保存 memory               |
+| `json.load(f)`      | 文件 → Python   | 读取 memory               |
+| `json.loads(s)`     | 字符串 → Python | 解析 API 里的 JSON 字符串 |
+| `json.dumps(obj)`   | Python → 字符串 | 调试打印                  |
 
 `ensure_ascii=False`： 中文不被转成 `\u4e2d`  
 `indent=2`： 保存时格式化，人类可读
@@ -529,21 +527,21 @@ if is_exit_triggered: # 外层：决定是否结束程序
 
 ## 一张「读码翻译表」—— 建议打印或做成 Anki
 
-|看到什么|立刻翻译成|
-|---|---|
-|`x.get(k, d)`|安全取字典键，默认 d|
-|`with open(...) as f:`|自动关文件|
-|`f"..."` / `"""..."""`|字符串模板 / 多行文本|
-|`.append(x)`|列表加 1 项|
-|`.extend(xs)`|列表合并多项|
-|`[f(x) for x in xs]`|对每个 x 算 f(x)，收集成列表|
-|`[x for x in xs if cond]`|过滤后收集|
-|`{k: v for ...}`|批量造字典|
-|`for k, v in d.items()`|遍历键值对|
-|`json.load/dump/loads/dumps`|JSON ↔ Python|
-|`os.getenv("X")`|读环境变量|
-|`a.b.c[d].e`|层层取属性/索引|
-|`def f(x=0) -> int:`|默认参数 + 返回类型|
-|`try/except`|出错走备用逻辑|
-|`from m import f`|从模块 m 引入 f|
-|`*args / **kwargs`|收可变参数 / 拆 dict 传参|
+| 看到什么                     | 立刻翻译成                   |
+| ---------------------------- | ---------------------------- |
+| `x.get(k, d)`                | 安全取字典键，默认 d         |
+| `with open(...) as f:`       | 自动关文件                   |
+| `f"..."` / `"""..."""`       | 字符串模板 / 多行文本        |
+| `.append(x)`                 | 列表加 1 项                  |
+| `.extend(xs)`                | 列表合并多项                 |
+| `[f(x) for x in xs]`         | 对每个 x 算 f(x)，收集成列表 |
+| `[x for x in xs if cond]`    | 过滤后收集                   |
+| `{k: v for ...}`             | 批量造字典                   |
+| `for k, v in d.items()`      | 遍历键值对                   |
+| `json.load/dump/loads/dumps` | JSON ↔ Python                |
+| `os.getenv("X")`             | 读环境变量                   |
+| `a.b.c[d].e`                 | 层层取属性/索引              |
+| `def f(x=0) -> int:`         | 默认参数 + 返回类型          |
+| `try/except`                 | 出错走备用逻辑               |
+| `from m import f`            | 从模块 m 引入 f              |
+| `*args / **kwargs`           | 收可变参数 / 拆 dict 传参    |
