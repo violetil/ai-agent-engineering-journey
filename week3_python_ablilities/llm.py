@@ -19,12 +19,11 @@ payload = {
   ]
 }
 
-res = requests.post(url=url, headers=headers, json=payload)
+res = requests.post(url=url, headers=headers, json=payload, timeout=10)
 
 # 检查状态码
 res.raise_for_status()
 
 data = res.json() # 解析接受到的数据
-
 print(data['choices'][0]['message']['content'])
 

@@ -1,5 +1,16 @@
+# OpenAI SDK
 openai
+
+# Environment variables
 python-dotenv
+
+# Count tokens
 tiktoken
+
+# Python type
 pydantic
+
+# HTTP
 requests
+httpx
+asyncio
