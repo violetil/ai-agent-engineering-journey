@@ -14,3 +14,7 @@ pydantic
 requests
 httpx
 asyncio
+
+# Web API
+fastapi
+uvicorn[standard]
