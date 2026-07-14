@@ -1,7 +1,8 @@
 # FastAPI 教学讲义
 
 > 前置知识：Python 基础、类型注解、Pydantic（见 `pydantic.md`）  
-> 目标：能独立写一个带校验、路由分层、依赖注入的 REST API
+> 目标：能独立写一个带校验、路由分层、依赖注入的 REST API  
+> 答疑精讲：读完有疑问先看 [`fastapi_faq.md`](./fastapi_faq.md)（Starlette/uvicorn、Path vs Query、全局异常、Depends、CORS、JWT 等 17 问）
 
 ---
 
@@ -605,4 +606,5 @@ async def chat(body: ChatIn):
 ---
 
 *讲义对应示例代码：`fastapi_demo/`*  
+*答疑精讲：`fastapi_faq.md`*  
 *相关前置：`pydantic.md`、`started_with_python.md`、`python_modes.md`*

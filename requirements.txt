@@ -18,3 +18,4 @@ asyncio
 # Web API
 fastapi
 uvicorn[standard]
+PyJWT
