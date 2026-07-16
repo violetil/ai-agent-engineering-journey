@@ -1,0 +1,10 @@
+{
+  "count": 5,
+  "users": [
+    {
+      "email": "violet@demo.com",
+      "username": "Violet",
+      "password": "violet123"
+    }
+  ]
+}
