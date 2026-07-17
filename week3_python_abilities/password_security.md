@@ -456,4 +456,5 @@ class User(BaseModel):
 ---
 
 *相关讲义：`pydantic.md`、`fastapi.md`、`fastapi_faq.md`*  
+*答疑精讲：`password_security_faq.md`*  
 *相关代码：`ai_service/`、`fastapi_demo/`*
