@@ -2,7 +2,8 @@
 
 > 前置知识：函数、字典/JSON、Pydantic 基础（见 `pydantic.md`）、一点 FastAPI  
 > 相关实践：`ai_service/`（当前若仍明文存密码，学完本讲可对照改造）  
-> 目标：分清编码 / 加密 / 哈希；会用 bcrypt 做注册哈希与登录校验；接口永不回显密码原文
+> 目标：分清编码 / 加密 / 哈希；会用 bcrypt 做注册哈希与登录校验；接口永不回显密码原文  
+> 答疑精讲：[`password_security_faq.md`](./password_security_faq.md)（base64、盐、SHA-256、hashlib、encode、彩虹表/撞库、bcrypt/passlib、hashpw/checkpw）
 
 ---
 
