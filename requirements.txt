@@ -19,3 +19,6 @@ asyncio
 fastapi
 uvicorn[standard]
 PyJWT
+
+# Password hashing
+bcrypt
