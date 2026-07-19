@@ -1,23 +1,20 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
+from typing import Annotated
 
 
-class UserCreate(BaseModel):
-  email: str
-  username: str
-  password: str
-  
-  
 class UserOut(BaseModel):
-  email: str
-  username: str
+  email: EmailStr
+  username: Annotated[str, Field(min_length=3, max_length=15)]
   
   
+class UserCreate(UserOut):
+  password: Annotated[str, Field(min_length=8)]
+  
+
 class SignInIn(BaseModel):
-  email: str
-  password: str
+  email: EmailStr
+  password: Annotated[str, Field(min_length=8)]
   
   
-class UserRecord(BaseModel):
-  email: str
-  username: str
+class UserRecord(UserOut):
   password_hash: str
