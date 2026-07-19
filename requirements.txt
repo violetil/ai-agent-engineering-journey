@@ -8,7 +8,7 @@ python-dotenv
 tiktoken
 
 # Python type
-pydantic
+pydantic[email]
 
 # HTTP
 requests
