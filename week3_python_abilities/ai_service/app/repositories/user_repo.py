@@ -1,19 +1,37 @@
-from schemas.auth import UserOut, UserRecord
+from app.schemas.auth import UserRecord
+from pathlib import Path
 import json
 
 
-USER_REPO_FILE = "../../data/user.json"
+USER_REPO_FILE = Path(__file__).resolve().parents[2] / "data" / "users.json"
 
 
 def load_users() -> list[UserRecord]:
   """Get all users."""
   
-  with open(USER_REPO_FILE, "r", encoding="utf-8") as f:
-    users = json.load(f)
+  if not USER_REPO_FILE.exists():
+    return []
+  users = json.loads(USER_REPO_FILE.read_text(encoding="utf-8"))
+  return [UserRecord(**user) for user in users]
+
+
+def save_users(users: list[UserRecord]) -> bool:
+  """Replace all users."""
+  
+  USER_REPO_FILE.parent.mkdir(parents=True, exist_ok=True)
+  
+  payload = [user.model_dump() for user in users]
+  
+  try: 
+    USER_REPO_FILE.write_text(
+      json.dumps(payload, indent=2, ensure_ascii=False),
+      encoding="utf-8"
+    )
+    return True
+  except:
+    return False
     
-  return [UserRecord(user) for user in users]
-
-
+    
 def get_user(email: str) -> UserRecord | None:
   users = load_users()
   
@@ -22,20 +40,9 @@ def get_user(email: str) -> UserRecord | None:
       return user
   
   return None
-
-
-def save_users(users: list[UserRecord]) -> bool:
-  """Replace all users."""
-  
-  with open(USER_REPO_FILE, "w", encoding="utf-8") as f:
-    try:
-      json.dump([user.model_dump() for user in users], f, indent=2, ensure_ascii=False)
-      return True
-    except:
-      return False
     
     
 def add_user(user: UserRecord) -> bool:
-  users = load_users()  
-  users.append(user.model_dump())
-  save_users([UserRecord(user) for user in users])
+  users: list[UserRecord] = load_users()  
+  users.append(user)
+  save_users(users)
