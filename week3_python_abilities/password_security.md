@@ -447,14 +447,14 @@ class User(BaseModel):
 
 ## 13. 下一步
 
-1. JWT 签发与校验（登录态）——可对照 `fastapi_demo` / `fastapi_faq.md` 第 17 问  
-2. 权限：登录了 ≠ 能操作别人的数据  
+1. JWT 签发与校验（登录态）——见 [`auth.md`](./auth.md)；可对照 `fastapi_demo` / `fastapi_faq.md` 第 17 问  
+2. 权限：登录了 ≠ 能操作别人的数据——见 [`auth.md`](./auth.md)  
 3. 重置密码流程（邮件/验证码 token）  
 4. 密钥与配置管理（`.env`，不进 git）  
 5. （可选）Argon2、二次验证 2FA  
 
 ---
 
-*相关讲义：`pydantic.md`、`fastapi.md`、`fastapi_faq.md`*  
+*相关讲义：`pydantic.md`、`fastapi.md`、`fastapi_faq.md`、`auth.md`*  
 *答疑精讲：`password_security_faq.md`*  
 *相关代码：`ai_service/`、`fastapi_demo/`*
