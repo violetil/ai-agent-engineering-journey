@@ -1,8 +1,10 @@
-###############
-### Python 
-###############
+# Python 
 __pycache__/
 llm_lab_env/
 
-# 环境变量
+# environment variables
 .env
+
+# data
+**/data/**
+!**/data/.gitkeep
