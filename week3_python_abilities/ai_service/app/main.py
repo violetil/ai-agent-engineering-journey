@@ -1,7 +1,6 @@
 from fastapi import FastAPI, status, HTTPException
-from app.schemas.auth import UserCreate, UserOut, SignInIn, UserRecord
-from app.services.auth_service import hash_password, verify_password
-from app.repositories.user_repo import add_user, get_user
+from app.schemas.auth import UserCreate, UserOut, SignInIn
+from app.services.auth_service import register_user, login
 
 
 app = FastAPI(
@@ -31,19 +30,12 @@ def root():
 def sign_up(user: UserCreate):
   """Create an user in database"""
   
-  hashed = hash_password(user.password)
-  
   try:
-    add_user(UserRecord(
-      email=user.email,
-      username=user.username,
-      password_hash=hashed
-    ))
-    return UserOut(email=user.email, username=user.username)
+    return register_user(user)
   except:
     raise HTTPException(
       status_code=status.HTTP_400_BAD_REQUEST,
-      detail="创建用户错误"
+      detail="用户已存在"
     )
 
 
@@ -51,5 +43,10 @@ def sign_up(user: UserCreate):
 def sign_in(input: SignInIn) -> bool:
   """Check email and password."""
   
-  user: UserRecord = get_user(input.email)
-  return verify_password(input.password, user.password_hash)
+  try:
+    return login(input)
+  except:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="邮箱或密码错误"
+    )
