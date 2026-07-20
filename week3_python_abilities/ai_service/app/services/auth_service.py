@@ -1,5 +1,6 @@
-from app.schemas.auth import UserCreate, UserOut, UserRecord, SignInIn
+from app.schemas.auth import UserCreate, UserOut, UserRecord, SignInIn, TokenOut
 from app.repositories.user_repo import add_user, get_user
+from app.core.security import create_access_token
 import bcrypt
 
 
@@ -23,8 +24,11 @@ def register_user(user: UserCreate) -> UserOut:
   return UserOut(email=user.email, username=user.username)
   
   
-def login(input: SignInIn) -> bool:
-  user = get_user(input.email)
-  if user is None:
-    return False
-  return verify_password(input.password, user.password_hash)
+def login(body: SignInIn) -> TokenOut:
+  user = get_user(body.email)
+  
+  if user is None or not verify_password(body.password, user.password_hash):
+    raise Exception({ "content": "邮箱或密码错误" })
+  
+  token = create_access_token(body.email)
+  return TokenOut(access_token=token)

@@ -1,6 +1,9 @@
 from fastapi import FastAPI, status, HTTPException
-from app.schemas.auth import UserCreate, UserOut, SignInIn
+from app.schemas.auth import UserCreate, UserOut, SignInIn, TokenOut
+from app.schemas.chat import ChatPrompt
+from app.llm.llm_call import ask_llm
 from app.services.auth_service import register_user, login
+from app.api.deps import CurrentUser
 
 
 app = FastAPI(
@@ -16,11 +19,11 @@ def root():
   }
   
 
-# @app.post("/chat/completions")
-# async def chat_completions(input: ChatCompletionsIn) -> str:
-#   return await ask_llm(input.prompt)
-# 
-# 
+@app.post("/chat/completions")
+async def chat_completions(body: ChatPrompt, user: CurrentUser) -> str:
+  return await ask_llm(body.prompt)
+
+
 # @app.post("/chat/completions/multi")
 # async def multi_chat_completions(input: list[ChatCompletionsIn]) -> list[str]:
 #   return await ask_llm_many([t.prompt for t in input])
@@ -39,12 +42,12 @@ def sign_up(user: UserCreate):
     )
 
 
-@app.post("/auth/sign_in")
-def sign_in(input: SignInIn) -> bool:
+@app.post("/auth/sign_in", response_model=TokenOut)
+def sign_in(body: SignInIn):
   """Check email and password."""
   
   try:
-    return login(input)
+    return login(body)
   except:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
