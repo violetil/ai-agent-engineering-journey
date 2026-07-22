@@ -1,7 +1,7 @@
 from fastapi import FastAPI, status, HTTPException
 from app.schemas.auth import UserCreate, UserOut, SignInIn, TokenOut
-from app.schemas.chat import ChatPrompt
-from app.llm.llm_call import ask_llm
+from app.schemas.chat import ChatRequest, ChatResponse
+from app.services.chat_service import chat_completions
 from app.services.auth_service import register_user, login
 from app.api.deps import CurrentUser
 
@@ -19,9 +19,9 @@ def root():
   }
   
 
-@app.post("/chat/completions")
-async def chat_completions(body: ChatPrompt, user: CurrentUser) -> str:
-  return await ask_llm(body.prompt)
+@app.post("/chat/completions", response_model=ChatResponse)
+def _chat_completions(body: ChatRequest, user: CurrentUser):
+  return chat_completions(body)
 
 
 # @app.post("/chat/completions/multi")
@@ -30,7 +30,7 @@ async def chat_completions(body: ChatPrompt, user: CurrentUser) -> str:
 
 
 @app.post("/auth/sign_up", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def sign_up(user: UserCreate):
+def _sign_up(user: UserCreate):
   """Create an user in database"""
   
   try:
@@ -43,7 +43,7 @@ def sign_up(user: UserCreate):
 
 
 @app.post("/auth/sign_in", response_model=TokenOut)
-def sign_in(body: SignInIn):
+def _sign_in(body: SignInIn):
   """Check email and password."""
   
   try:
