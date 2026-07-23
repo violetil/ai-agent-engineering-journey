@@ -17,9 +17,9 @@ header = {
 }
 
 
-def ask_llm(messages: list[ChatMessage], temperature: float = 0.7) -> ChatResponse:
+def ask_llm(model: str, messages: list[ChatMessage], temperature: float = 0.7) -> ChatResponse:
   payload = {
-    "model": "deepseek-chat",
+    "model": model,
     "temperature": temperature,
     "messages": [m.model_dump() for m in messages]
   }

@@ -9,6 +9,7 @@ class ChatMessage(BaseModel):
   
 class ChatRequest(BaseModel):
   messages: list[ChatMessage]
+  model_provider: Literal["deepseek", "openai"] = "deepseek"
   model: str = "deepseek-chat"
   temperature: float = Field(default=0.7, ge=0, le=2)
   max_token: int | None = None
@@ -17,3 +18,4 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
   content: str
   model: str
+  usage: None # TODO
