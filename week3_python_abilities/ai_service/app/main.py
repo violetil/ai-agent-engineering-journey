@@ -1,13 +1,14 @@
-from fastapi import FastAPI, status, HTTPException
+from fastapi import FastAPI, status
 from app.schemas.auth import UserCreate, UserOut, SignInIn, TokenOut
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.chat_service import chat_completions
 from app.services.auth_service import register_user, login
-from app.core.errors import UserAlreadyExistsError, InvalidCredentialsError
 from app.api.deps import CurrentUser
+from app.core.error_handlers import register_error_handlers
 
 
 app = FastAPI(title="Violet AI API Service")
+register_error_handlers(app)
 
 
 # ---------- Routers ----------

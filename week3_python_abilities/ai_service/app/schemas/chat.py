@@ -18,4 +18,4 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
   content: str
   model: str
-  usage: None # TODO
+  usage: None = None # TODO
