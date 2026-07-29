@@ -1,4 +1,5 @@
 from app.schemas.auth import UserRecord
+from app.core.errors import UserNotExistsError
 from pathlib import Path
 import json
 
@@ -24,7 +25,7 @@ def load_users() -> list[UserRecord]:
 
 def save_users(users: list[UserRecord]):
   """Replace all users."""
-  payload = [user.model_dump() for user in users]
+  payload = [user.model_dump(mode="json") for user in users]
   USER_REPO_FILE.write_text(
     json.dumps(payload, indent=2, ensure_ascii=False),
     encoding="utf-8"
@@ -45,3 +46,13 @@ def add_user(user: UserRecord):
   users = load_users()  
   users.append(user)
   save_users(users)
+
+
+def update_user(email: str, user: UserRecord) -> UserRecord:
+  users = load_users()
+  for i, u in enumerate(users):
+    if u.email == email:
+      users[i] = user.model_copy(update={"email": email})
+      save_users(users)
+      return users[i]
+  raise UserNotExistsError(email)

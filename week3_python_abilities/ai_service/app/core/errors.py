@@ -10,6 +10,12 @@ class UserAlreadyExistsError(AppError):
     super().__init__(f"用户 {email} 已存在")
     self.email = email
     
+
+class UserNotExistsError(AppError):
+  def __init__(self, email: str):
+    super().__init__(f"用户 {email} 不存在")
+    self.email = email
+    
     
 class InvalidCredentialsError(AppError):
   def __init__(self):
@@ -28,3 +34,7 @@ class UpstreamServiceError(AppError):
 
 class UpstreamTimeoutError(AppError):
   """上游(LLM)调用超时"""
+  
+  
+class QuotaExceededError(AppError):
+  """权限不够"""

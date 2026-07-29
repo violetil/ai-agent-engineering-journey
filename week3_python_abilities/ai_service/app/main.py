@@ -19,7 +19,7 @@ def root():
 
 @app.post("/chat/completions", response_model=ChatResponse)
 def _chat_completions(body: ChatRequest, user: CurrentUser):
-  return chat_completions(body)
+  return chat_completions(body, user)
 
 
 @app.post("/auth/sign_up", response_model=UserOut, status_code=status.HTTP_201_CREATED)

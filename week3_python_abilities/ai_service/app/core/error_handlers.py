@@ -11,16 +11,20 @@ from app.core.errors import (
   UpstreamServiceError,
   UpstreamTimeoutError,
   UserAlreadyExistsError,
+  UserNotExistsError,
+  QuotaExceededError
 )
 
 
 # 业务异常类型映射表
 ERROR_MAP: dict[type[AppError], tuple[int, str]] = {
   UserAlreadyExistsError: (409, "USER_ALREADY_EXISTS"),
+  UserNotExistsError: (409, "USER_NOT_EXISTS"),
   InvalidCredentialsError: (401, "INVALID_CREDENTIALS"),
   UnsupportedModelError: (422, "UNSUPPORTED_MODEL"),
   UpstreamTimeoutError: (504, "UPSTREAM_TIMEOUT"),
-  UpstreamServiceError: (504, "UPSTREAM_ERROR")
+  UpstreamServiceError: (504, "UPSTREAM_ERROR"),
+  QuotaExceededError: (403, "QUOTA_EXCEEDED")
 }
 
 
