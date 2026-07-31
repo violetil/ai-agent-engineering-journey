@@ -1,10 +1,11 @@
 from fastapi import FastAPI, status, Request
+from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
 import httpx
 
 from app.schemas.auth import UserCreate, UserOut, SignInIn, TokenOut
 from app.schemas.chat import ChatRequest, ChatResponse
-from app.services.chat_service import chat_completions
+from app.services.chat_service import chat_completions, chat_completions_stream
 from app.services.auth_service import register_user, login
 from app.api.deps import CurrentUser
 from app.core.error_handlers import register_error_handlers
@@ -28,8 +29,21 @@ def root():
   return { "message": "Violet AI API Service" }
   
 
-@app.post("/chat/completions", response_model=ChatResponse)
+@app.post("/chat/completions")
 async def _chat_completions(body: ChatRequest, user: CurrentUser, request: Request):
+  client = request.app.state.http_client
+  
+  if body.stream:
+    return StreamingResponse(
+      chat_completions_stream(body, user, client),
+      media_type="text/event-stream",
+      headers={
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no"
+      }
+    )
+  
   return await chat_completions(body, user, request.app.state.http_client)
 
 

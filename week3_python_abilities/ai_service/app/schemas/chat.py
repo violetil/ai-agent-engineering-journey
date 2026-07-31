@@ -12,6 +12,7 @@ class ChatRequest(BaseModel):
   model_provider: Literal["deepseek"] = "deepseek"
   model: str = "deepseek-chat"
   temperature: float = Field(default=0.7, ge=0, le=2)
+  stream: bool = False
   max_token: int | None = None
   
   
