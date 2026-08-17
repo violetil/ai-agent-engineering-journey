@@ -8,3 +8,6 @@ llm_lab_env/
 # data
 **/data/**
 !**/data/.gitkeep
+
+# logs
+**/logs/**
