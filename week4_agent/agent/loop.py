@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from .config import client, MODEL
 from .trace import StepTrace, logger
 from .tools import tools_schema
-# from .context import compact, truncate
+from .context import compact, truncate
 from .dispatch import dispatch
 
 # 类型别名
@@ -50,7 +50,7 @@ def run_loop(
       on_step(t)
   
   for step in range(1, max_steps + 1):
-    # compact(messages, budget=token_budget)    # 调 API 之前先治理
+    compact(messages, budget=token_budget)    # 调 API 之前先治理
     
     t0 = time.perf_counter()
     res = client.chat.completions.create(
@@ -71,7 +71,7 @@ def run_loop(
     for tc in message.tool_calls:
       key = (tc.function.name, tc.function.arguments)
       seen[key] += 1
-      result = NO_PROGRESS_HINT if seen[key] >= 3 else dispatch(tc) # tuncate
+      result = NO_PROGRESS_HINT if seen[key] >= 3 else truncate(dispatch(tc))
       messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
       logger.info("step %d %s(%s)", step, tc.function.name, tc.function.arguments)
       emit(StepTrace(step, message.content, tc.function.name, tc.function.arguments, result, usage.prompt_tokens, usage.completion_tokens, latency_ms))
