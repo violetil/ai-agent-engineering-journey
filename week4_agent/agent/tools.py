@@ -3,11 +3,14 @@ import ast
 import math
 import operator
 
+from pathlib import Path
 from pydantic import BaseModel, Field
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from collections.abc import Callable
 from typing import Annotated
+
+from .config import PKG_ROOT
 
 
 @dataclass(frozen=True)
@@ -35,8 +38,10 @@ def tools_schema() -> list[dict]:
   } for t in REGISTRY.values()]
   
   
-# ----------- TOOLS --------------
+# ----------- TOOLS   --------------
+
 ## --- calculator ---
+
 _BINOPS = {
   ast.Add: operator.add,
   ast.Sub: operator.sub,
@@ -168,9 +173,9 @@ register(Tool(
   args_model=CalculatorArgs,
   func=calculator
 ))
-## --- calculator ---
 
 ## --- get_weather ---
+
 class GetWeatherArgs(BaseModel):
   city: Annotated[str, Field(description="城市名，如 北京")]
 
@@ -189,9 +194,9 @@ register(Tool(
   args_model=GetWeatherArgs,
   func=get_weather
 ))
-## --- get_weather ---
 
-## --- now ---
+# --- now   ---
+
 _WEEKDAYS = ("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日")
 
 class NowArgs(BaseModel):
@@ -212,4 +217,26 @@ register(Tool(
   args_model=NowArgs,
   func=now
 ))
-## --- now ---
+
+
+# --- read_file   ---
+
+class ReadFileArgs(BaseModel):
+  path: Annotated[str, Field(description="相对于工作目录的文件路径，如 tutorials/agent_loop.md")]
+  
+
+def read_file(args: ReadFileArgs) -> str:
+  target = (PKG_ROOT / args.path).resolve()
+  if not target.is_relative_to(PKG_ROOT):
+    return "错误：不允许访问工作目录之外的文件。"
+  if not target.is_file():
+    return f"错误：文件不存在：{args.path}"
+  return target.read_text(encoding="utf-8")
+
+
+register(Tool(
+  name="read_file",
+  description="读取工作目录内的一个文本文件的全部内容。查看文件、回答关于文件的问题时使用。",
+  args_model=ReadFileArgs,
+  func=read_file,
+))
