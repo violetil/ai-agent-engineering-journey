@@ -11,3 +11,4 @@ llm_lab_env/
 
 # logs
 **/logs/**
+**/traces/**
