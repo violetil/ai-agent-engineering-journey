@@ -11,6 +11,7 @@ from collections.abc import Callable
 from typing import Annotated
 
 from .config import PKG_ROOT
+from .context import MAX_TOOL_CHARS
 
 
 @dataclass(frozen=True)
@@ -221,8 +222,14 @@ register(Tool(
 
 # --- read_file   ---
 
+READ_PAGE_CHARS = MAX_TOOL_CHARS - 300
+
 class ReadFileArgs(BaseModel):
   path: Annotated[str, Field(description="相对于工作目录的文件路径，如 tutorials/agent_loop.md")]
+  offset: Annotated[int, Field(
+    default=0, ge=0,
+    description="从第几个字符开始读，默认0。当结果提示被截断时，按提示的 offset 继续读取后续内容。",
+  )]
   
 
 def read_file(args: ReadFileArgs) -> str:
@@ -231,7 +238,17 @@ def read_file(args: ReadFileArgs) -> str:
     return "错误：不允许访问工作目录之外的文件。"
   if not target.is_file():
     return f"错误：文件不存在：{args.path}"
-  return target.read_text(encoding="utf-8")
+  
+  
+  text = target.read_text(encoding="utf-8")
+  if args.offset >= len(text):
+    return f"错误：offset={args.offset} 超出文件长度 {len(text)}"
+  
+  end = min(args.offset + READ_PAGE_CHARS, len(text))
+  header = f"[{args.path} 第 {args.offset}-{end} 字符，共 {len(text)}]\n"
+  footer = f"\n... (未完，继续用 offset={end})" if end < len(text) else ""
+  return header + text[args.offset:end] + footer
+  
 
 
 register(Tool(
