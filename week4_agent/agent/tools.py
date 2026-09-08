@@ -253,7 +253,7 @@ def read_file(args: ReadFileArgs) -> str:
 
 register(Tool(
   name="read_file",
-  description="读取工作目录内的一个文本文件的全部内容。查看文件、回答关于文件的问题时使用。",
+  description="分页读取工作目录内的一个文本文件的全部内容。查看文件、回答关于文件的问题时使用。",
   args_model=ReadFileArgs,
   func=read_file,
 ))

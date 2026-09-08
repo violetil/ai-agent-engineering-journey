@@ -81,8 +81,6 @@ def run_loop(
   final = client.chat.completions.create(
     model=MODEL,
     messages=messages,
-    tools=tools_schema(),
-    tool_choice="none",
   )
   answer = final.choices[0].message.content
   messages.append({"role": "assistant", "content": answer})

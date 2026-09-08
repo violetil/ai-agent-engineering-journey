@@ -2,6 +2,7 @@
 import tiktoken
 
 from .config import client, MODEL
+from .trace import logger
 
 encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -110,3 +111,6 @@ def compact(messages: list[dict], budget: int = 6000) -> None:
   summary = summarize_history(messages[1:cut])
   # 切片赋值
   messages[1:cut] = [{"role": "user", "content": f"[前情摘要，供参考]\n{summary}"}]
+  
+  if count_tokens(messages) > budget:
+    logger.warning("预算 %d 低于上下文地板（当前 %d），治理无法达标", budget, count_tokens(messages))

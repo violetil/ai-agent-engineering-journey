@@ -34,7 +34,7 @@ def run_agent(user_input: str) -> str:
     {"role": "user", "content": user_input},
   ]
   started = time.perf_counter()
-  result = run_loop(messages, on_step=print_step)
+  result = run_loop(messages, on_step=print_step, max_steps=15, token_budget=999999)
   print_summary(result, time.perf_counter() - started)
   path = dump_trace(user_input, result.steps, result.messages, result.stop_reason)
   print(f"trace 已写入 {path}")
