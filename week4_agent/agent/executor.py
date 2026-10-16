@@ -64,7 +64,7 @@ def topological_levels(steps: list[PlanStep]) -> list[list[PlanStep]]:
   while remaining:
     ready = [s for s in remaining.values() if set(s.depends_on) <= done]
     if not ready:
-      raise PlanningError(f"计划存在循环依赖：{list[remaining]}")
+      raise PlanningError(f"计划存在循环依赖：{list(remaining)}")
     levels.append(ready)
     done |= {s.id for s in ready}
     for s in ready:
