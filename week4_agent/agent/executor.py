@@ -103,7 +103,7 @@ async def execute_plan_parallel(plan: Plan, board: Blackboard) -> PlanOutcome:
         board.failures[step.id] = result.note or result.output
         return PlanOutcome(ok=False, board=board)
       board.results[step.id] = result.output
-    return PlanOutcome(ok=True, board=board)
+  return PlanOutcome(ok=True, board=board)
 
 
 MAX_REPLANS = 2
