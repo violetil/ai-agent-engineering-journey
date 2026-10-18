@@ -8,6 +8,7 @@ from .schemas import Plan, PlanStep, Blackboard, StepResult
 from .loop import run_loop
 from .planner import PlanningError, make_plan
 from .config import client, MODEL
+from .trace import USAGE, note
 
 
 EXECUTOR_PROMPT = """你是执行器。只完成当前这一步的目标，不要做计划里的其他步。
@@ -39,19 +40,30 @@ def extract_result(answer: str) -> StepResult:
     return StepResult(status="partial", output=answer or "", note="结构化提取失败，已退回原文")
 
 
-def execute_step(step: PlanStep, board: Blackboard, max_steps: int = 5) -> StepResult:
+def execute_step(
+  step: PlanStep,
+  board: Blackboard,
+  known: list[str],
+  max_steps: int = 5
+) -> StepResult:
   hint = f"建议工具：{step.suggested_tool}" if step.suggested_tool else "无建议工具"
+  prior = "\n".join(known)
   messages = [
     {"role": "system", "content": EXECUTOR_PROMPT},
     {
       "role": "user", 
       "content": (
         f"当前目标：{step.goal}\n{hint}\n\n"
+        f"此前已确认的事实：\n{prior or '（无）'}\n\n"
         f"已知信息：\n{board.context_for(step) or '（无）'}"
       ),
     },
   ]
   loop = run_loop(messages, max_steps=max_steps)
+  seen = {t.index: (t.prompt_tokens, t.completion_tokens) for t in loop.steps}
+  USAGE["in"] += sum(p for p, _ in seen.values())
+  USAGE["out"] += sum(c for _, c in seen.values())
+  USAGE["calls"] += len(seen)
   return extract_result(loop.answer)
 
 
@@ -78,21 +90,22 @@ class PlanOutcome:
   board: Blackboard
   
   
-def execute_plan(plan: Plan, board: Blackboard) -> PlanOutcome:
+def execute_plan(plan: Plan, board: Blackboard, known: list[str]) -> PlanOutcome:
   for level in topological_levels(plan.steps):
     for step in level:
-      result = execute_step(step, board)
+      result = execute_step(step, board, known)
       if result.status == "failed":
         board.failures[step.id] = result.note or result.output
         return PlanOutcome(ok=False, board=board)
       board.results[step.id] = result.output
+      print(f"  黑板[{step.id}] {result.status}: {result.output[:120]}")
   return PlanOutcome(ok=True, board=board)
 
 
-async def execute_plan_parallel(plan: Plan, board: Blackboard) -> PlanOutcome:
+async def execute_plan_parallel(plan: Plan, board: Blackboard, known: list[str]) -> PlanOutcome:
   for level in topological_levels(plan.steps):
     results = await asyncio.gather(
-      *(asyncio.to_thread(execute_step, s, board) for s in level),
+      *(asyncio.to_thread(execute_step, s, board, known) for s in level),
       return_exceptions=True
     )
     for step, result in zip(level, results):
@@ -109,20 +122,25 @@ async def execute_plan_parallel(plan: Plan, board: Blackboard) -> PlanOutcome:
 MAX_REPLANS = 2
 
 
-def summarize(task: str, board: Blackboard) -> str:
+def summarize(task: str, board: Blackboard, known: list[str]) -> str:
   facts = "\n".join(f"- 步骤 {i}：{out}" for i, out in board.results.items())
   misses = "\n".join(f"- 步骤 {i} 失败：{why}" for i, why in board.failures.items())
-  reps = client.chat.completions.create(
+  prior = "\n".join(f"- {item}" for item in known)
+  resp = client.chat.completions.create(
     model=MODEL,
     messages=[{
       "role": "user",
       "content": (
         f"任务：{task}\n\n已得到的事实：\n{facts or '（无）'}\n\n"
-        f"失败：\n{misses or '（无）'}\n\n用几段话直接回答用户，不要提及步骤编号。"
+        f"此前已确认的事实：\n{prior or '（无）'}\n\n"
+        f"本份计划得到的事实：\n{facts or '（无）'}\n\n"
+        f"本份计划的失败：\n{misses or '（无）'}\n\n"
+        "用几段话直接回答用户，不要提及步骤编号。"
       )
     }]
   )
-  return reps.choices[0].message.content
+  note(resp)
+  return resp.choices[0].message.content
 
 
 def run(task: str) -> str:  
@@ -130,13 +148,19 @@ def run(task: str) -> str:
   print("计划：", plan.model_dump_json(indent=2, ensure_ascii=False))
   board = Blackboard()
   replans = 0
+  known: list[str] = []
   
   while True:
-    outcome = execute_plan(plan, board)
+    outcome = execute_plan(plan, board, known)
     if outcome.ok or replans >= MAX_REPLANS:
       break
     replans += 1
     print(f"重规划第 {replans} 次")
     plan = make_plan(task, previous=plan, board=board)
+    print("新计划：", plan.model_dump_json(indent=2, ensure_ascii=False))
+    known.extend(f"已完成：{out}" for out in board.results.values())
+    known.extend(f"已失败：{why}" for why in board.failures.values())
+    board.results.clear()
+    board.failures.clear()
     
-  return summarize(task, board)
+  return summarize(task, board, known)

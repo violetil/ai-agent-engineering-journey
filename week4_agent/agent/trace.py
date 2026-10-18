@@ -9,6 +9,16 @@ import json
 from .config import LOG_DIR, TRACE_DIR
 
 
+USAGE = {"in": 0, "out": 0, "calls": 0}
+
+def note(resp) -> None:
+  if resp.usage is None:
+    return
+  USAGE["in"] += resp.usage.prompt_tokens
+  USAGE["out"] += resp.usage.completion_tokens
+  USAGE["calls"] += 1
+
+
 @dataclass
 class StepTrace:
   index: int

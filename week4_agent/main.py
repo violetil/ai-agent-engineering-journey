@@ -1,8 +1,11 @@
 # week4_agent/main.py
 import time
+import sys
 
 from agent.loop import LoopResult, StepTrace, run_loop
 from agent.trace import dump_trace
+from agent.planner import make_plan
+from agent.executor import run as run_planned
 
 SYSTEM_PROMPT = "你是一个可以调用工具的助手"
 
@@ -42,4 +45,9 @@ def run_agent(user_input: str) -> str:
 
 
 if __name__ == "__main__":
-  print(run_agent(input(">> ")))
+  user_input = input(">> ")
+  
+  if "--plan" in sys.argv:
+    print(run_planned(user_input))
+  else:
+    print(run_agent(user_input))

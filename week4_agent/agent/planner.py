@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from .schemas import Plan, Blackboard
 from .config import client, MODEL
 from .tools import REGISTRY
+from .trace import USAGE, note
 
 
 class PlanningError(Exception):
@@ -62,6 +63,7 @@ def make_plan(
         {"role": "user", "content": task + extra + error_hint},
       ],
     )
+    note(resp)
     
     raw = resp.choices[0].message.content
     try:
