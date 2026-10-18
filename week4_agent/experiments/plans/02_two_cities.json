@@ -1,0 +1,26 @@
+{
+  "reasoning": "要比较北京和上海哪个更暖和，需要分别获取两个城市的当前天气数据，再根据温度对比得出结论。两步即可完成，不需要更多步骤。",
+  "steps": [
+    {
+      "id": 1,
+      "goal": "获取北京当前的天气信息（含气温）",
+      "depends_on": [],
+      "suggested_tool": "get_weather"
+    },
+    {
+      "id": 2,
+      "goal": "获取上海当前的天气信息（含气温）",
+      "depends_on": [],
+      "suggested_tool": "get_weather"
+    },
+    {
+      "id": 3,
+      "goal": "比较北京和上海的气温数值，判断哪个城市更暖和",
+      "depends_on": [
+        1,
+        2
+      ],
+      "suggested_tool": null
+    }
+  ]
+}

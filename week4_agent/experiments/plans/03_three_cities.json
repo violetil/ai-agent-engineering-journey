@@ -1,0 +1,33 @@
+{
+  "reasoning": "需要分别获取三个城市的当前天气，然后比较温度高低。三个查询相互独立，可以各占一步，最后一步做对比。",
+  "steps": [
+    {
+      "id": 1,
+      "goal": "获取北京的当前天气信息",
+      "depends_on": [],
+      "suggested_tool": "get_weather"
+    },
+    {
+      "id": 2,
+      "goal": "获取上海的当前天气信息",
+      "depends_on": [],
+      "suggested_tool": "get_weather"
+    },
+    {
+      "id": 3,
+      "goal": "获取深圳的当前天气信息",
+      "depends_on": [],
+      "suggested_tool": "get_weather"
+    },
+    {
+      "id": 4,
+      "goal": "对比北京、上海、深圳的气温，判断哪个城市最暖和",
+      "depends_on": [
+        1,
+        2,
+        3
+      ],
+      "suggested_tool": null
+    }
+  ]
+}
