@@ -1,14 +1,15 @@
 # agent/executor.py
 import json
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from pydantic import ValidationError
+from collections.abc import Callable
 
 from .schemas import Plan, PlanStep, Blackboard, StepResult
 from .loop import run_loop
 from .planner import PlanningError, make_plan
 from .config import client, MODEL
-from .trace import USAGE, note
+from .trace import USAGE, note, StepTrace
 
 
 EXECUTOR_PROMPT = """你是执行器。只完成当前这一步的目标，不要做计划里的其他步。
@@ -25,6 +26,12 @@ EXTRACT_PROMPT = """把执行器最终的回答提炼成 JSON，符合下列 sch
 原回答：
 {answer}
 """
+
+
+OnEvent = Callable[[dict], None]
+
+def _noop(event: dict) -> None:
+  pass
 
 
 def extract_result(answer: str) -> StepResult:
@@ -44,7 +51,8 @@ def execute_step(
   step: PlanStep,
   board: Blackboard,
   known: list[str],
-  max_steps: int = 5
+  max_steps: int = 5,
+  on_event: OnEvent = _noop,
 ) -> StepResult:
   hint = f"建议工具：{step.suggested_tool}" if step.suggested_tool else "无建议工具"
   prior = "\n".join(known)
@@ -59,7 +67,12 @@ def execute_step(
       ),
     },
   ]
-  loop = run_loop(messages, max_steps=max_steps)
+  
+  def relay(t: StepTrace) -> None:
+    on_event({"event": "step", "data": {"plan_step": step.id, **asdict(t)}})
+    
+  loop = run_loop(messages, max_steps=max_steps, on_step=relay)
+  
   seen = {t.index: (t.prompt_tokens, t.completion_tokens) for t in loop.steps}
   USAGE["in"] += sum(p for p, _ in seen.values())
   USAGE["out"] += sum(c for _, c in seen.values())
@@ -90,15 +103,15 @@ class PlanOutcome:
   board: Blackboard
   
   
-def execute_plan(plan: Plan, board: Blackboard, known: list[str]) -> PlanOutcome:
+def execute_plan(plan: Plan, board: Blackboard, known: list[str], on_event: OnEvent = _noop) -> PlanOutcome: 
   for level in topological_levels(plan.steps):
     for step in level:
-      result = execute_step(step, board, known)
+      result = execute_step(step, board, known, on_event=on_event)
+      on_event({"event": "step_result", "data": {"plan_step": step.id, **result.model_dump()}})
       if result.status == "failed":
         board.failures[step.id] = result.note or result.output
         return PlanOutcome(ok=False, board=board)
       board.results[step.id] = result.output
-      print(f"  黑板[{step.id}] {result.status}: {result.output[:120]}")
   return PlanOutcome(ok=True, board=board)
 
 
@@ -143,21 +156,21 @@ def summarize(task: str, board: Blackboard, known: list[str]) -> str:
   return resp.choices[0].message.content
 
 
-def run(task: str) -> str:  
+def run(task: str, on_event: OnEvent = _noop) -> str:  
   plan = make_plan(task)
-  print("计划：", plan.model_dump_json(indent=2, ensure_ascii=False))
+  on_event({"event": "plan", "data": plan.model_dump()})
   board = Blackboard()
   replans = 0
   known: list[str] = []
   
   while True:
-    outcome = execute_plan(plan, board, known)
+    outcome = execute_plan(plan, board, known, on_event=on_event)
     if outcome.ok or replans >= MAX_REPLANS:
       break
     replans += 1
-    print(f"重规划第 {replans} 次")
+    on_event({"event": "replan", "data": {"round": replans}})
     plan = make_plan(task, previous=plan, board=board)
-    print("新计划：", plan.model_dump_json(indent=2, ensure_ascii=False))
+    on_event({"event": "plan", "data": plan.model_dump()})
     known.extend(f"已完成：{out}" for out in board.results.values())
     known.extend(f"已失败：{why}" for why in board.failures.values())
     board.results.clear()

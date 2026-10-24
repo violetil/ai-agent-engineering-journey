@@ -49,8 +49,6 @@ async def chat_completions_stream(
   user: UserRecord,
   client: httpx.AsyncClient
 ) -> AsyncIterator[str]:
-  _prepare_chat(body, user)
-  
   async for piece in llm.deepseek.stream_llm(
     client=client,
     model=body.model,

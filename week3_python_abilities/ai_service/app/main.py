@@ -1,12 +1,14 @@
+import httpx
 from fastapi import FastAPI, status, Request
 from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
-import httpx
 
 from app.schemas.auth import UserCreate, UserOut, SignInIn, TokenOut
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.services.chat_service import chat_completions, chat_completions_stream
+from app.schemas.chat import ChatRequest
+from app.schemas.agent import AgentRunRequest
+from app.services.chat_service import chat_completions, chat_completions_stream, _prepare_chat
 from app.services.auth_service import register_user, login
+from app.services.agent_service import prepare_agent_run, agent_run_stream
 from app.api.deps import CurrentUser
 from app.core.error_handlers import register_error_handlers
 from app.core.config import deepseek_headers, HTTP_TIMEOUT
@@ -34,6 +36,7 @@ async def _chat_completions(body: ChatRequest, user: CurrentUser, request: Reque
   client = request.app.state.http_client
   
   if body.stream:
+    _prepare_chat(body, user)
     return StreamingResponse(
       chat_completions_stream(body, user, client),
       media_type="text/event-stream",
@@ -45,6 +48,20 @@ async def _chat_completions(body: ChatRequest, user: CurrentUser, request: Reque
     )
   
   return await chat_completions(body, user, request.app.state.http_client)
+
+
+@app.post("/agent/run")
+async def _agent_run(body: AgentRunRequest, user: CurrentUser):
+  prepare_agent_run(user)
+  return StreamingResponse(
+    agent_run_stream(body),
+    media_type="text/event-stream",
+    headers={
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+    }
+  )
 
 
 @app.post("/auth/sign_up", response_model=UserOut, status_code=status.HTTP_201_CREATED)
