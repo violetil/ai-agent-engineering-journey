@@ -70,7 +70,7 @@ for prompt, expect in FULL:
   print("\n########## PLANNER", prompt)
   USAGE["in"] = USAGE["out"] = USAGE["calls"] = 0
   t0 = time.perf_counter()
-  answer = run(prompt)
+  answer = run(prompt, on_event=lambda e: print(e["event"], json.dumps(e["data"], ensure_ascii=False)))
   elapsed = time.perf_counter() - t0
   print(answer)
   print(f"METRIC planner in={USAGE['in']} out={USAGE['out']} calls={USAGE['calls']} wall={elapsed:.1f}s")
