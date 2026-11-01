@@ -26,7 +26,7 @@ def _show_occurrences(text: str, needle: str, limit: int = 3) -> str:
   while pos != -1 and len(hits) < limit:
     hits.append(text.count("\n", 0, pos) + 1)
     pos = text.find(needle, pos + 1)
-  return "、".join(f"第 {n} 行" for n in hits)
+  return "、".join(f"第 {n} 行" for n in hits) + ("..." if len(hits) > limit else "")
   
   
 def edit_file(args: EditFileArgs) -> str:

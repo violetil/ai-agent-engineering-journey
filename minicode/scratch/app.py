@@ -1,8 +1,8 @@
 def greet(name: str):
-  print(f"hell {name}")
-  return None
+  print(f"hello {name}")
+  return ""
 
 def Hello(name):
-  return None
+  return ""
   
 greet("violet")
