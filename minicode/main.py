@@ -24,6 +24,16 @@ def summarize(result: LoopResult, elapsed: float) -> tuple[int, int]:
   return total_in, total_out
 
 
+def ask_in_terminal(command: str, reason: str) -> bool:
+  print(f"\n  ⚠ 需要确认 ({reason})\n    {command}")
+  while True:
+    ans = input("  执行？[y/N] ").strip().lower()
+    if ans in ("y", "yes"):
+      return True
+    if ans in ("n", "", "no"):
+      return False
+
+
 def repl(max_steps: int) -> None:
   messages: list[dict] = [{"role": "system", "content": build_system_prompt()}]
   session_in = session_out = 0
@@ -70,4 +80,5 @@ if __name__ == "__main__":
   parser.add_argument("--max-steps", type=int, default=20)
   ns = parser.parse_args()
   config.set_workspace(ns.workspace)
+  config.confirm_hook = ask_in_terminal
   repl(ns.max_steps)

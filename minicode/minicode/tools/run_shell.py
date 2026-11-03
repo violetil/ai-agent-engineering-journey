@@ -1,11 +1,14 @@
 # minicode/tools/run_shell.py
 import os
+import locale
 import subprocess
+from datetime import datetime
 from typing import Annotated
 from pydantic import BaseModel, Field
 
 from .registry import Tool, ToolError, register
 from .. import config
+from ..policy import classify
 
 DEFAULT_TIMEOUT = 60
 MAX_TIMEOUT = 300
@@ -24,9 +27,33 @@ def _clip(text: str) -> str:
     return text
   omitted = len(text) - HEAD_CHARS - TAIL_CHARS
   return text[:HEAD_CHARS] + f"\n... (中间省略 {omitted} 字符) ...\n" + text[-TAIL_CHARS:]
+
+
+def _decode(raw: bytes) -> str:
+  for enc in ("utf-8", locale.getpreferredencoding(False)):
+    try:
+      return raw.decode(enc)
+    except UnicodeDecodeError:
+      continue
+  return raw.decode("utf-8", errors="replace")
   
+  
+def _audit(command: str, decision: str, reason: str) -> None:
+  with (config.LOG_DIR / "commands.log").open("a", encoding="utf-8") as f:
+    f.write(f"{datetime.now().isoformat(timespec="seconds")}\t{decision}\t{reason}\t{command}\n")
+
   
 def run_shell(args: RunShellArgs) -> str:
+  verdict = classify(args.command)
+  if verdict.level == "deny":
+    _audit(args.command, "deny", verdict.reason)
+    raise ToolError(f"命令被拒绝执行 {verdict.reason}。请换一种不具破环性的做法，或把这一步交给用户手动完成。")
+  if verdict.level == "confirm":
+    if not config.confirm_hook(args.command, verdict.reason):
+      _audit(args.command, "rejected", verdict.reason)
+      raise ToolError("用户拒绝了这条命令。不要原样重试；如果任务必须依赖它，请说明原因并询问用户。")
+  _audit(args.command, verdict.level, verdict.reason)
+  
   env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
   try:
     proc = subprocess.run(
@@ -34,8 +61,6 @@ def run_shell(args: RunShellArgs) -> str:
       shell=True,
       cwd=config.WORKSPACE,
       capture_output=True,
-      encoding="utf-8",
-      errors="replace",
       timeout=args.timeout,
       env=env,
       stdin=subprocess.DEVNULL,
@@ -49,9 +74,9 @@ def run_shell(args: RunShellArgs) -> str:
     
   parts = [f"[exit code {proc.returncode}]"]
   if proc.stdout.strip():
-    parts.append("stdout:\n" + _clip(proc.stdout.rstrip()))
+    parts.append("stdout:\n" + _clip(_decode(proc.stdout).rstrip()))
   if proc.stderr.strip():
-    parts.append("stderr:\n" + _clip(proc.stderr.rstrip()))
+    parts.append("stderr:\n" + _clip(_decode(proc.stderr).rstrip()))
   if len(parts) == 1:
     parts.append("(没有输出)")
   return "\n".join(parts)

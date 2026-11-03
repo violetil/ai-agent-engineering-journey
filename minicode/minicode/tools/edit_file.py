@@ -23,10 +23,13 @@ def _show_occurrences(text: str, needle: str, limit: int = 3) -> str:
   """告诉模型重复出现在哪几行，便于它补充上下文。"""
   hits: list[int] = []
   pos = text.find(needle)
+  truncated = False
   while pos != -1 and len(hits) < limit:
     hits.append(text.count("\n", 0, pos) + 1)
     pos = text.find(needle, pos + 1)
-  return "、".join(f"第 {n} 行" for n in hits) + ("..." if len(hits) > limit else "")
+    if pos != -1 and len(hits) >= limit:
+      truncated = True
+  return "、".join(f"第 {n} 行" for n in hits) + ("..." if truncated else "")
   
   
 def edit_file(args: EditFileArgs) -> str:
