@@ -6,6 +6,7 @@ from minicode import config
 from minicode.loop import LoopResult, StepTrace, run_loop
 from minicode.prompts import build_system_prompt
 from minicode.trace import dump_trace
+from minicode.context import KEEP_RECENT, MAX_TOOL_CHARS
 
 
 def print_step(t: StepTrace) -> None:
@@ -17,10 +18,12 @@ def print_step(t: StepTrace) -> None:
   
   
 def summarize(result: LoopResult, elapsed: float) -> tuple[int, int]:
-  per_step = {t.index: (t.prompt_tokens, t.completion_tokens) for t in result.steps}
-  total_in = sum(p for p, _ in per_step.values())
-  total_out = sum(c for _, c in per_step.values())
-  print(f"  [{len(per_step)} 步 · {total_in:,} in / {total_out:,} out · {elapsed:.1f}s · {result.stop_reason}]")
+  per_step = {t.index: (t.prompt_tokens, t.completion_tokens, t.cache_hit_tokens) for t in result.steps}
+  total_in = sum(p for p, _, _ in per_step.values())
+  total_out = sum(c for _, c, _ in per_step.values())
+  hit = sum(h for _, _, h in per_step.values())
+  print(f"  [{len(per_step)} 步 · {total_in:,} in / {total_out:,} out · 命中 {hit:,} ({hit / total_in:.0%}) "
+        f" 未命中 {total_in - hit:,} · {elapsed:.1f}s · {result.stop_reason}")
   return total_in, total_out
 
 
@@ -34,7 +37,7 @@ def ask_in_terminal(command: str, reason: str) -> bool:
       return False
 
 
-def repl(max_steps: int) -> None:
+def repl(max_steps: int, token_budget: int) -> None:
   messages: list[dict] = [{"role": "system", "content": build_system_prompt()}]
   session_in = session_out = 0
   print(f"minicode · 工作目录 {config.WORKSPACE}\n/reset 清空对话，/quit 退出\n")
@@ -57,7 +60,7 @@ def repl(max_steps: int) -> None:
     messages.append({"role": "user", "content": user})
     started = time.perf_counter()
     try:
-      result = run_loop(messages, max_steps=max_steps, token_budget=60000, on_step=print_step)
+      result = run_loop(messages, max_steps=max_steps, token_budget=token_budget, on_step=print_step)
     except KeyboardInterrupt:
       print("\n  已中断本轮")
       # 中断发生在某次 API 调用或工具执行中途，messages 末尾可能是没有 tool 回应的 assistant(tool_calls)
@@ -69,7 +72,12 @@ def repl(max_steps: int) -> None:
     i, o = summarize(result, time.perf_counter() - started)
     session_in += i
     session_out += o
-    dump_trace(user, result.steps, result.messages, result.stop_reason)
+    dump_trace(user, result.steps, result.messages, result.stop_reason, meta={
+      "governance": config.GOVERNANCE_ENABLED,
+      "token_budget": token_budget,
+      "keep_recent": KEEP_RECENT,
+      "max_tool_chars": MAX_TOOL_CHARS,
+    })
   
   print(f"本次会话共 {session_in:,} in / {session_out:,} out")
   
@@ -78,7 +86,11 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="minicode：终端编码 Agent")
   parser.add_argument("--workspace", "-w", default=".", help="目标仓库，默认当前目录")
   parser.add_argument("--max-steps", type=int, default=20)
+  parser.add_argument("--token-budget", type=int, default=32000)
+  parser.add_argument("--no-governance", action="store_true", help="跳过过期标记和去重，对照实验用")
   ns = parser.parse_args()
   config.set_workspace(ns.workspace)
   config.confirm_hook = ask_in_terminal
-  repl(ns.max_steps)
+  config.GOVERNANCE_ENABLED = not ns.no_governance
+  print(f"治理 {'开' if config.GOVERNANCE_ENABLED else '关'}，token_budget={ns.token_budget}")
+  repl(ns.max_steps, ns.token_budget)

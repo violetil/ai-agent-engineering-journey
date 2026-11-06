@@ -54,7 +54,8 @@ def run_shell(args: RunShellArgs) -> str:
       raise ToolError("用户拒绝了这条命令。不要原样重试；如果任务必须依赖它，请说明原因并询问用户。")
   _audit(args.command, verdict.level, verdict.reason)
   
-  env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+  env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1",
+         "GIT_CEILING_DIRECTORIES": str(config.WORKSPACE.parent)}
   try:
     proc = subprocess.run(
       args.command,

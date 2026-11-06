@@ -21,6 +21,8 @@ TRACE_DIR.mkdir(exist_ok=True)
 # 工具操作的目标仓库，main.py 可用 set_workspace 覆盖
 WORKSPACE: Path = Path.cwd().resolve()
 
+GOVERNANCE_ENABLED = True
+
 # 确认钩子：(命令, 原因) -> 是否放行。默认拒绝一切，非交互环境下不会悄悄执行任何需确认的命令。
 ConfirmHook = Callable[[str, str], bool]
 

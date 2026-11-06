@@ -34,7 +34,7 @@ def run_loop(
   messages: list[dict],
   *,
   max_steps: int = 10,
-  token_budget: int = 6000,
+  token_budget: int = 32000,
   on_step: OnStep | None = None
 ) -> LoopResult:
   """通用主循环。会就地修改并最终返回 messages。
@@ -63,9 +63,10 @@ def run_loop(
     message = res.choices[0].message
     messages.append(message.model_dump(exclude_none=True))
     usage = res.usage
+    cache_hit = getattr(usage, "prompt_cache_hit_tokens", 0) or 0
     
     if not message.tool_calls:
-      emit(StepTrace(step, message.content, None, None, None, usage.prompt_tokens, usage.completion_tokens, latency_ms))
+      emit(StepTrace(step, message.content, None, None, None, usage.prompt_tokens, usage.completion_tokens, latency_ms, cache_hit))
       return LoopResult(message.content, "done", steps, messages)
     
     for tc in message.tool_calls:
@@ -74,7 +75,7 @@ def run_loop(
       result = NO_PROGRESS_HINT if seen[key] >= 3 else truncate(dispatch(tc))
       messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
       logger.info("step %d %s(%s)", step, tc.function.name, tc.function.arguments)
-      emit(StepTrace(step, message.content, tc.function.name, tc.function.arguments, result, usage.prompt_tokens, usage.completion_tokens, latency_ms))
+      emit(StepTrace(step, message.content, tc.function.name, tc.function.arguments, result, usage.prompt_tokens, usage.completion_tokens, latency_ms, cache_hit))
       
   # 步数耗尽，逼一个最终答案
   messages.append({"role": "user", "content": BUDGET_HINT})

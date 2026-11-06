@@ -28,6 +28,9 @@ DENY_PATTERNS: tuple[tuple[str, str], ...] = (
   (r"\bformat\s+[a-z]:", "格式化磁盘"),
   (r"\b(rd|rmdir)\s+/s\b.*\b[a-z]:\\?(\s|$)", "递归删除整个盘符"),
   (r"\brm\s+-[a-z]*r[a-z]*\s+(/|~|\$HOME)(\s|$)", "递归删除根目录或家家目录"),
+  (r"\b(rd|rmdir)\s+(/[sq]\s+)*(\.|\.\\|%cd%)(\s|$)", "递归删除当前目录"),
+  (r"\bdel\s+(/[a-z]\s+)*\*(\.\*)?(\s|$)", "删除当前目录下的所有文件"),
+  (r"\bgit\s+(checkout\s+--\s+\.|restore\s+\.)(\s|$)", "丢弃全部未提交改动"),
   (r"\bgit\s+push\b.*(--force|-f\b)", "强制推送会覆盖远端历史"),
   (r"\bgit\s+(reset\s+--hard|clean\s+-[a-z]*f)", "丢弃未提交的改动，不可恢复"),
   (r"\b(shutdown|reboot|logoff)\b", "关机或注销"),
@@ -36,9 +39,7 @@ DENY_PATTERNS: tuple[tuple[str, str], ...] = (
   (r"\bpowershell\b.*-(e|enc|encodedcommand)\b", "编码的 powershell 命令，无法审查内容"),
 )
 
-
-# 命令分隔符：&& || & | ; 。把一条复合命令拆成多段，每段单独判
-_SEPARATORS = re.compile(r"\s*(?:&&|\|\||[&|;])\s*")
+_SEP_TOKENS = {"&&", "||", "&", "|", ";"}
 
 
 def _escapes_workspace(command: str) -> bool:
@@ -53,16 +54,23 @@ def _escapes_workspace(command: str) -> bool:
   return False
 
 
-def _spilt_segments(command: str) -> list[str]:
-  return [s for s in _SEPARATORS.split(command) if s.strip()]
-
-
-def _first_tokens(segment: str) -> tuple[str, ...]:
+def _segments(command: str) -> list[list[str]] | None:
+  """把一条复合命令切成若干段，每段是小写 token 列表。引号内的分隔符不切。
+  引号不配对等无法解析的情况返回 None，由调用方归入 Confirm。"""
+  lexer = shlex.shlex(command, posix=False, punctuation_chars=True)
+  lexer.whitespace_split = True
   try:
-    tokens = shlex.split(segment, posix=False)
+    tokens = list(lexer)
   except ValueError:
-    return ()
-  return tuple(t.strip('"').lower() for t in tokens[:2])
+    return None
+  segments: list[list[str]] = [[]]
+  for tok in tokens:
+    if tok in _SEP_TOKENS:
+      if segments[-1]:
+        segments.append([])
+      continue
+    segments[-1].append(tok.strip('"').lower())
+  return [s for s in segments if s]
 
 
 def classify(command: str) -> Verdict:
@@ -74,14 +82,15 @@ def classify(command: str) -> Verdict:
     
   if _escapes_workspace(command):
     return Verdict("confirm", "命令引用了工作目录之外的路径")
+  
+  segs = _segments(command)
+  if segs is None:
+    return Verdict("confirm", "命令无法解析 (引号不配对？)")
     
   worst: Verdict = Verdict("allow", "常规开发命令")
-  for seg in _spilt_segments(command):
-    tokens = _first_tokens(seg)
-    if not tokens:
-      return Verdict("confirm", f"无法解析命令片段：{seg!r}")
-    if any(tokens[: len(p)] == p for p in ALLOW_PREFIXES):
+  for tokens in segs:
+    if any(tuple(tokens[: len(p)]) == p for p in ALLOW_PREFIXES):
       continue
-    worst = Verdict("confirm", f"{seg.strip()!r} 不在免确认列表中")
+    worst = Verdict("confirm", f"{' '.join(tokens)!r} 不在免确认列表中")
   return worst
   

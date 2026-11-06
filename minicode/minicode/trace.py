@@ -29,6 +29,7 @@ class StepTrace:
   prompt_tokens: int
   completion_tokens: int
   latency_ms: int
+  cache_hit_tokens: int = 0
   
 
 _file_handler = logging.FileHandler(LOG_DIR / "agent.log", encoding="utf-8")
@@ -44,13 +45,15 @@ logging.basicConfig(
 
 logger = logging.getLogger("agent")
 
-def dump_trace(user_input: str, traces: list[StepTrace], messages: list[dict], stop_reason: str) -> Path:
+def dump_trace(user_input: str, traces: list[StepTrace], messages: list[dict],
+               stop_reason: str, meta: dict | None = None) -> Path:
   path = TRACE_DIR / f"trace_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
   path.write_text(
     json.dumps(
       {
         "input": user_input,
         "stop_reason": stop_reason,
+        "meta": meta or {},
         "steps": [asdict(t) for t in traces],
         "messages": messages,
       },
